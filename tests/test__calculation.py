@@ -3,9 +3,14 @@
 # Creation time: 18:52
 # Creator: SteamPeKa
 
+import csv
+import os
+
 import numpy
-import krippendorffs_alpha
 import pytest
+
+import krippendorffs_alpha
+import testing_utils
 
 # Example E data matrix
 OBSERVER_A_DATA = numpy.array([
@@ -50,33 +55,9 @@ OBSERVER_C_DATA.flags.writeable = False
 OBSERVER_D_DATA.flags.writeable = False
 
 
-class TestGetSummingBounds(object):
-    def test_immutable(self):
-        bounds = krippendorffs_alpha._calculation.get_summing_bounds(3)
-        with pytest.raises(ValueError) as exception_info:
-            bounds[0, 0] = 10
-        assert exception_info.type is ValueError
-
-    def test_squared(self):
-        for size in range(1, 11):
-            bounds = krippendorffs_alpha._calculation.get_summing_bounds(size)
-            assert len(bounds.shape) == 2
-            assert bounds.shape == (size, size)
-
-    def test_bounds_is_right(self):
-        for size in range(1, 11):
-            bounds = krippendorffs_alpha._calculation.get_summing_bounds(size)
-            for c in range(size):
-                for k in range(size):
-                    if k > c:
-                        assert bounds[c, k] == 1
-                    else:
-                        assert bounds[c, k] == 0
-
-
 class TestMakeCoincidencesMatrixFromDataMatrix(object):
     def test_data_from_example_no_omit(self):
-        expected_coincidences_matrix = numpy.array([
+        expected_value_by_unit_matrix = numpy.array([
             [3, 0, 0, 0, 0, 1, 0, 3, 0, 0, 2, 0],
             [0, 3, 0, 0, 4, 1, 0, 1, 4, 0, 0, 0],
             [0, 1, 4, 4, 0, 1, 0, 0, 0, 0, 0, 1],
@@ -84,15 +65,13 @@ class TestMakeCoincidencesMatrixFromDataMatrix(object):
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
         ])
 
-        actual_coincidences_matrix = krippendorffs_alpha._calculation.make_coincidences_matrix_from_data_matrix(
+        actual_value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX, omit_unpairable=False
         )
-        assert expected_coincidences_matrix.shape == actual_coincidences_matrix.shape
-        assert numpy.max(numpy.abs(expected_coincidences_matrix - actual_coincidences_matrix)) == pytest.approx(0), \
-            f"expected:\n{expected_coincidences_matrix}\nactual:\n{actual_coincidences_matrix}"
+        testing_utils.assert_equal_tensors(expected_value_by_unit_matrix, actual_value_by_unit_matrix)
 
     def test_data_from_example_omit_unpairable(self):
-        expected_coincidences_matrix = numpy.array([
+        expected_value_by_unit_matrix = numpy.array([
             [3, 0, 0, 0, 0, 1, 0, 3, 0, 0, 2],
             [0, 3, 0, 0, 4, 1, 0, 1, 4, 0, 0],
             [0, 1, 4, 4, 0, 1, 0, 0, 0, 0, 0],
@@ -100,29 +79,62 @@ class TestMakeCoincidencesMatrixFromDataMatrix(object):
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0],
         ])
 
-        actual_coincidences_matrix = krippendorffs_alpha._calculation.make_coincidences_matrix_from_data_matrix(
+        actual_value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX, omit_unpairable=True
         )
-        assert expected_coincidences_matrix.shape == actual_coincidences_matrix.shape
-        assert numpy.max(numpy.abs(expected_coincidences_matrix - actual_coincidences_matrix)) == pytest.approx(0), \
-            f"expected:\n{expected_coincidences_matrix}\nactual:\n{actual_coincidences_matrix}"
+        testing_utils.assert_equal_tensors(expected_value_by_unit_matrix, actual_value_by_unit_matrix)
 
 
-class TestCalcAlpha(object):
+# noinspection PyPep8Naming
+class Test_CalcAlpha(object):
 
     def test_e_nominal(self):
-        coincidences_matrix = krippendorffs_alpha._calculation.make_coincidences_matrix_from_data_matrix(
+        value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX, omit_unpairable=True
         )
-        metric_tensor = krippendorffs_alpha.metrics.NominalMetric().get_metric_tensor(list(range(1, 6)))
-        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(coincidences_matrix, metric_tensor)
+        metric_tensor = krippendorffs_alpha.metrics.NominalMetric().get_metric_tensor(list(range(1, 6)),
+                                                                                      symmetric=False)
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(value_by_unit_matrix, metric_tensor)
         assert actual_alpha == pytest.approx(0.743, abs=0.001)
 
     def test_e_interval(self):
-        coincidences_matrix = krippendorffs_alpha._calculation.make_coincidences_matrix_from_data_matrix(
+        value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX,
             omit_unpairable=True)
 
-        metric_tensor = krippendorffs_alpha.metrics.IntervalMetric().get_metric_tensor(list(range(1, 6)))
-        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(coincidences_matrix, metric_tensor)
+        metric_tensor = krippendorffs_alpha.metrics.IntervalMetric().get_metric_tensor(list(range(1, 6)),
+                                                                                       symmetric=False)
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(value_by_unit_matrix, metric_tensor)
+        assert actual_alpha == pytest.approx(0.849, abs=0.001)
+
+
+class TestCalcAlpha(object):
+    def test_e_nominal(self):
+        with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
+            input_table = csv.reader(f, delimiter="\t")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "NULL" else None
+            )
+
+        testing_utils.assert_equal_tensors(DATA_MATRIX, prepared_data.answers_tensor)
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "nominal")
+        assert actual_alpha == pytest.approx(0.743, abs=0.001)
+
+    def test_e_interval(self):
+        with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
+            input_table = csv.reader(f, delimiter="\t")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "NULL" else None
+            )
+
+        testing_utils.assert_equal_tensors(DATA_MATRIX, prepared_data.answers_tensor)
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "interval")
         assert actual_alpha == pytest.approx(0.849, abs=0.001)

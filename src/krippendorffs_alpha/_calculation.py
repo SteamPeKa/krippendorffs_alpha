@@ -3,7 +3,12 @@
 # Creation time: 18:43
 # Creator: SteamPeKa
 
+import typing
+
 import numpy
+
+from .data_converters import _PreparedData
+from .metrics import AbstractMetric
 
 """
 Protected member of package designed for encapsulate inconvenient  calculation calls and for unit-testing.
@@ -12,79 +17,82 @@ Protected member of package designed for encapsulate inconvenient  calculation c
 __CREATED_SUMMING_BOUNDS = {}
 
 
-def get_summing_bounds(size: int) -> numpy.ndarray:
+def drop_summing_bounds_cache() -> None:
     """
-    Function producing necessary immutable "summing bounds" matrices. Encapsulates reusing.
-
-    :param size: positive integer defining shape of resulting array
-    :return: Upper triangular matrix of ones with zeroed main diagonal and all diagonals bellow
+    Clears cache of summing bounds arrays.
     """
-    if size <= 0:
-        raise ValueError(
-            f"Can't create squared matrix of shape ({size},{size}). Param size has to be a natural number."
-        )
     global __CREATED_SUMMING_BOUNDS
-    if size not in __CREATED_SUMMING_BOUNDS:
-        result = numpy.triu(numpy.ones(shape=(size, size)), 1)
-        result.flags.writeable = False
-        __CREATED_SUMMING_BOUNDS[size] = result
-    return __CREATED_SUMMING_BOUNDS[size]
+    __CREATED_SUMMING_BOUNDS.clear()
 
 
-def make_coincidences_matrix_from_data_matrix(data_matrix: numpy.ndarray,
-                                              omit_unpairable: bool = True) -> numpy.ndarray:
+def make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
+                                               omit_unpairable: bool = True) -> numpy.ndarray:
     """
     :param data_matrix: Data matrix of shape (O, U, V). O -- number of unique observer,
                                                         U -- number of unique units,
                                                         V -- number of unique values
     :param omit_unpairable: If True the resulting matrix will have units that have more than one observer associated
                             with them only.
-    :return: coincidences_matrix with unpairable units omitted if omit_unpairable is True.
+    :return: value_by_unit_matrix with unpairable units omitted if omit_unpairable is True.
     """
     assert len(data_matrix.shape) == 3
     norming_values = data_matrix.sum(axis=2)
     norming_values[norming_values == 0] = 1
     normed_data_matrix = data_matrix / norming_values[:, :, numpy.newaxis]
-    raw_coincidences_matrix = normed_data_matrix.sum(axis=0).T
+    raw_value_by_unit_matrix = normed_data_matrix.sum(axis=0).T
     if not omit_unpairable:
-        return raw_coincidences_matrix
+        return raw_value_by_unit_matrix
 
     observers_per_unit = numpy.zeros(data_matrix.shape[:2])
     observers_per_unit[(data_matrix != 0).any(axis=2)] = 1
     observers_per_unit = observers_per_unit.sum(axis=0)
 
-    result = raw_coincidences_matrix[:, observers_per_unit > 1]
+    result = raw_value_by_unit_matrix[:, observers_per_unit > 1]
     return result
 
 
-def calc_alpha(coincidences_matrix: numpy.ndarray, distance_matrix: numpy.ndarray) -> float:
+def _calc_alpha(value_by_unit_matrix: numpy.ndarray, bounded_distance_matrix: numpy.ndarray) -> float:
     """
-    :param coincidences_matrix: Coincidences matrix of shape (V, U). V -- number of unique values,
-                                                                     U -- number of unique units.
-                                coincidences_matrix have to be a result of make_coincidences_matrix_from_data_matrix
+    :param value_by_unit_matrix: Value-by-unit matrix of shape (V, U). V -- number of unique values,
+                                                                       U -- number of unique units.
+                                value_by_unit_matrix have to be a result of make_value_by_unit_matrix_from_data_matrix
                                 function.
-    :param distance_matrix: Matrix of shape (V, V) with squared distances between possible values.
+    :param bounded_distance_matrix: Upper diagonal matrix of shape (V, V) with squared distances between possible
+                                    values. It is a point-wise multiplication of metric tensor and summing bounds
+                                    matrix.
     :return: Krippendorff's alpha. A float value between -1.0 and 1.0.
     """
-    assert len(coincidences_matrix.shape) == 2
-    assert len(distance_matrix.shape) == 2
-    assert coincidences_matrix.shape[0] == distance_matrix.shape[0] == distance_matrix.shape[1]
-    assert numpy.all(distance_matrix >= 0)
-    values_count = distance_matrix.shape[1]
-    overlap = coincidences_matrix.sum(axis=0)
+    assert len(value_by_unit_matrix.shape) == 2
+    assert len(bounded_distance_matrix.shape) == 2
+    assert bounded_distance_matrix.shape[0] == bounded_distance_matrix.shape[1]
+    values_count = bounded_distance_matrix.shape[0]
+    assert value_by_unit_matrix.shape[0] == values_count
+    assert numpy.all(bounded_distance_matrix >= 0)
+    # TODO assertion that bounded_distance_matrix is really bounded distance_matrix
+    #     (everything lower main diagonal is zero).
+    overlap = value_by_unit_matrix.sum(axis=0)
     assert numpy.all(overlap > 1), overlap
-    answers_frequencies = coincidences_matrix.sum(axis=1)
+    answers_frequencies = value_by_unit_matrix.sum(axis=1)
     total_pairable_values = numpy.sum(answers_frequencies)
     assert total_pairable_values == numpy.sum(overlap)
-    inner_summing_bounds = get_summing_bounds(values_count)
     unit_norming = numpy.divide(1, overlap - 1)
 
-    denominator = numpy.einsum("ck,c,k,ck->",
-                               inner_summing_bounds, answers_frequencies, answers_frequencies, distance_matrix)
-    numerator = numpy.einsum("u,ck,cu,ku,ck->",
-                             unit_norming, inner_summing_bounds, coincidences_matrix, coincidences_matrix,
-                             distance_matrix)
+    denominator = numpy.einsum("c,k,ck->", answers_frequencies, answers_frequencies, bounded_distance_matrix)
+    numerator = numpy.einsum("u,cu,ku,ck->",
+                             unit_norming, value_by_unit_matrix, value_by_unit_matrix, bounded_distance_matrix)
 
     result = 1.0 - (total_pairable_values - 1) * (numerator / denominator)
     assert -1.0 <= result <= 1.0
     return result
+
+
+VT = typing.TypeVar("VT")
+
+
+def calc_alpha(prepared_data: _PreparedData[typing.Any, typing.Any, VT],
+               metric: typing.Union[None, AbstractMetric[VT], str]):
+    bounded_distance_matrix = prepared_data.get_metric_tensor(metric, symmetric=False)
+    value_by_unit_matrix = make_value_by_unit_matrix_from_data_matrix(prepared_data.answers_tensor,
+                                                                      omit_unpairable=True)
+    return _calc_alpha(value_by_unit_matrix=value_by_unit_matrix,
+                       bounded_distance_matrix=bounded_distance_matrix)

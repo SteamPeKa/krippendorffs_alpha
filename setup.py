@@ -7,7 +7,7 @@ import setuptools
 
 setuptools.setup(
     name="krippendorffs_alpha",
-    version="0.1",
+    version="0.2alpha",
     author="SteamPeKa",
     author_email="vladimir.o.balagurov@yandex.ru",
     description="Krippendorff 's alpha-reliability coefficient computation",
@@ -16,5 +16,6 @@ setuptools.setup(
     package_dir={"": "src"},
     test_suite="tests",
     zip_safe=False,
-    install_requires=["numpy", "pytest"]
+    install_requires=["numpy>=1.10.4",
+                      "pytest>=2.8.5"]
 )

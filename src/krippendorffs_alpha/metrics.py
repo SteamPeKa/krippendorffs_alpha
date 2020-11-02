@@ -4,13 +4,14 @@
 # Creator: SteamPeKa
 
 
-from typing import TypeVar
+from typing import TypeVar, Generic, Iterable, Union
+
 import numpy
 
 T = TypeVar("T")
 
 
-class AbstractMetric(object):
+class AbstractMetric(Generic[T], object):
     def __init__(self, *args, **kwargs):
         return
 
@@ -19,10 +20,15 @@ class AbstractMetric(object):
             "Abstract method of class AbstractMetric call from class {}".format(self.__class__.__name__)
         )
 
-    def get_metric_tensor(self, possible_values):
-        return numpy.array(
-            [[self(row_value, column_value) for column_value in possible_values] for row_value in possible_values]
-        )
+    def get_metric_tensor(self, possible_values: Iterable[T], symmetric=True):
+        if symmetric:
+            return numpy.array(
+                [[self(row_value, column_value) for column_value in possible_values] for row_value in possible_values]
+            )
+        else:
+            return numpy.array([[self(row_value, column_value) if k > c else 0.0
+                                 for k, column_value in enumerate(possible_values)]
+                                for c, row_value in enumerate(possible_values)])
 
 
 class NominalMetric(AbstractMetric):
@@ -42,7 +48,7 @@ class RatioMetric(AbstractMetric):
         return ((value1 - value2) / (value1 + value2)) ** 2
 
 
-def get_metric(metric, *args, **kwargs) -> AbstractMetric:
+def get_metric(metric: Union[None, AbstractMetric, str], *args, **kwargs) -> AbstractMetric:
     if metric is None:
         return NominalMetric(*args, **kwargs)
     elif isinstance(metric, AbstractMetric):

@@ -3,10 +3,13 @@
 # Creation time: 10:13
 # Creator: SteamPeKa
 
-import pytest
-import krippendorffs_alpha
 import random
+
 import numpy
+import pytest
+
+import krippendorffs_alpha
+import testing_utils
 
 random.seed(42)
 
@@ -68,7 +71,7 @@ class TestNominalMetric(object):
         for (v1, v2), true_result in test_cases:
             assert metric_object(v1, v2) == pytest.approx(true_result)
 
-    def test_get_metric_matrix(self):
+    def test_get_symmetric_metric_tensor(self):
         metric = krippendorffs_alpha.metrics.NominalMetric()
         expected_matrix = numpy.array([[0, 1, 1, 1, 1],
                                        [1, 0, 1, 1, 1],
@@ -76,7 +79,17 @@ class TestNominalMetric(object):
                                        [1, 1, 1, 0, 1],
                                        [1, 1, 1, 1, 0]])
         result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4])
-        assert numpy.max(numpy.abs(expected_matrix - result_matrix)) == pytest.approx(0)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)
+
+    def test_get_asymmetric_metric_tensor(self):
+        metric = krippendorffs_alpha.metrics.NominalMetric()
+        expected_matrix = numpy.array([[0, 1, 1, 1, 1],
+                                       [0, 0, 1, 1, 1],
+                                       [0, 0, 0, 1, 1],
+                                       [0, 0, 0, 0, 1],
+                                       [0, 0, 0, 0, 0]])
+        result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4], symmetric=False)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)
 
 
 class TestIntervalMetric(object):
@@ -106,7 +119,7 @@ class TestIntervalMetric(object):
         for (v1, v2), true_result in test_cases:
             assert metric_object(v1, v2) == pytest.approx(true_result)
 
-    def test_get_metric_matrix(self):
+    def test_get_symmetric_metric_tensor(self):
         metric = krippendorffs_alpha.metrics.IntervalMetric()
         expected_matrix = numpy.array([[0, 1, 4, 9, 16],
                                        [1, 0, 1, 4, 9],
@@ -114,7 +127,17 @@ class TestIntervalMetric(object):
                                        [9, 4, 1, 0, 1],
                                        [16, 9, 4, 1, 0]])
         result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4])
-        assert numpy.max(numpy.abs(expected_matrix - result_matrix)) == pytest.approx(0)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)
+
+    def test_get_asymmetric_metric_tensor(self):
+        metric = krippendorffs_alpha.metrics.IntervalMetric()
+        expected_matrix = numpy.array([[0, 1, 4, 9, 16],
+                                       [0, 0, 1, 4, 9],
+                                       [0, 0, 0, 1, 4],
+                                       [0, 0, 0, 0, 1],
+                                       [0, 0, 0, 0, 0]])
+        result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4], symmetric=False)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)
 
 
 class TestRatioMetric(object):
@@ -143,7 +166,7 @@ class TestRatioMetric(object):
         for (v1, v2), true_result in test_cases:
             assert metric_object(v1, v2) == pytest.approx(true_result)
 
-    def test_get_metric_matrix(self):
+    def test_get_symmetric_metric_tensor(self):
         metric = krippendorffs_alpha.metrics.RatioMetric()
         expected_matrix = numpy.array([[0, 1, 1, 1, 1],
                                        [1, 0, 1 / 9, 1 / 4, 9 / 25],
@@ -151,5 +174,14 @@ class TestRatioMetric(object):
                                        [1, 1 / 4, 1 / 25, 0, 1 / 49],
                                        [1, 9 / 25, 4 / 36, 1 / 49, 0]])
         result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4])
-        assert numpy.max(numpy.abs(expected_matrix - result_matrix)) == pytest.approx(0), (
-                expected_matrix - result_matrix)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)
+
+    def test_get_asymmetric_metric_tensor(self):
+        metric = krippendorffs_alpha.metrics.RatioMetric()
+        expected_matrix = numpy.array([[0, 1, 1, 1, 1],
+                                       [0, 0, 1 / 9, 1 / 4, 9 / 25],
+                                       [0, 0, 0, 1 / 25, 4 / 36],
+                                       [0, 0, 0, 0, 1 / 49],
+                                       [0, 0, 0, 0, 0]])
+        result_matrix = metric.get_metric_tensor([0, 1, 2, 3, 4], symmetric=False)
+        testing_utils.assert_equal_tensors(expected_matrix, result_matrix)

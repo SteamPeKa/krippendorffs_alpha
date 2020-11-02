@@ -3,7 +3,6 @@
 # Creation time: 10:22
 # Creator: SteamPeKa
 
-from . import metrics
-
-# protected members imports for unit-testing
 from . import _calculation
+from . import data_converters
+from . import metrics
