@@ -65,7 +65,7 @@ class TestMakeCoincidencesMatrixFromDataMatrix(object):
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
         ])
 
-        actual_value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
+        actual_value_by_unit_matrix = krippendorffs_alpha._calculation._make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX, omit_unpairable=False
         )
         testing_utils.assert_equal_tensors(expected_value_by_unit_matrix, actual_value_by_unit_matrix)
@@ -79,7 +79,7 @@ class TestMakeCoincidencesMatrixFromDataMatrix(object):
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0],
         ])
 
-        actual_value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
+        actual_value_by_unit_matrix = krippendorffs_alpha._calculation._make_value_by_unit_matrix_from_data_matrix(
             DATA_MATRIX, omit_unpairable=True
         )
         testing_utils.assert_equal_tensors(expected_value_by_unit_matrix, actual_value_by_unit_matrix)
@@ -89,22 +89,15 @@ class TestMakeCoincidencesMatrixFromDataMatrix(object):
 class Test_CalcAlpha(object):
 
     def test_e_nominal(self):
-        value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
-            DATA_MATRIX, omit_unpairable=True
-        )
         metric_tensor = krippendorffs_alpha.metrics.NominalMetric().get_metric_tensor(list(range(1, 6)),
                                                                                       symmetric=False)
-        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(value_by_unit_matrix, metric_tensor)
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(DATA_MATRIX, metric_tensor)
         assert actual_alpha == pytest.approx(0.743, abs=0.001)
 
     def test_e_interval(self):
-        value_by_unit_matrix = krippendorffs_alpha._calculation.make_value_by_unit_matrix_from_data_matrix(
-            DATA_MATRIX,
-            omit_unpairable=True)
-
         metric_tensor = krippendorffs_alpha.metrics.IntervalMetric().get_metric_tensor(list(range(1, 6)),
                                                                                        symmetric=False)
-        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(value_by_unit_matrix, metric_tensor)
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha(DATA_MATRIX, metric_tensor)
         assert actual_alpha == pytest.approx(0.849, abs=0.001)
 
 

@@ -25,8 +25,8 @@ def drop_summing_bounds_cache() -> None:
     __CREATED_SUMMING_BOUNDS.clear()
 
 
-def make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
-                                               omit_unpairable: bool = True) -> numpy.ndarray:
+def _make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
+                                                omit_unpairable: bool = True) -> numpy.ndarray:
     """
     :param data_matrix: Data matrix of shape (O, U, V). O -- number of unique observer,
                                                         U -- number of unique units,
@@ -51,7 +51,7 @@ def make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
     return result
 
 
-def _calc_alpha(value_by_unit_matrix: numpy.ndarray, bounded_distance_matrix: numpy.ndarray) -> float:
+def _calculation_routine(value_by_unit_matrix: numpy.ndarray, bounded_distance_matrix: numpy.ndarray) -> float:
     """
     :param value_by_unit_matrix: Value-by-unit matrix of shape (V, U). V -- number of unique values,
                                                                        U -- number of unique units.
@@ -89,10 +89,17 @@ def _calc_alpha(value_by_unit_matrix: numpy.ndarray, bounded_distance_matrix: nu
 VT = typing.TypeVar("VT")
 
 
+def _calc_alpha(W_tensor, bounded_distance_matrix):
+    value_by_unit_matrix = _make_value_by_unit_matrix_from_data_matrix(W_tensor,
+                                                                       omit_unpairable=True)
+    return _calculation_routine(value_by_unit_matrix=value_by_unit_matrix,
+                                bounded_distance_matrix=bounded_distance_matrix)
+
+
 def calc_alpha(prepared_data: _PreparedData[typing.Any, typing.Any, VT],
                metric: typing.Union[None, AbstractMetric[VT], str]):
     bounded_distance_matrix = prepared_data.get_metric_tensor(metric, symmetric=False)
-    value_by_unit_matrix = make_value_by_unit_matrix_from_data_matrix(prepared_data.answers_tensor,
-                                                                      omit_unpairable=True)
-    return _calc_alpha(value_by_unit_matrix=value_by_unit_matrix,
-                       bounded_distance_matrix=bounded_distance_matrix)
+    value_by_unit_matrix = _make_value_by_unit_matrix_from_data_matrix(prepared_data.answers_tensor,
+                                                                       omit_unpairable=True)
+    return _calculation_routine(value_by_unit_matrix=value_by_unit_matrix,
+                                bounded_distance_matrix=bounded_distance_matrix)
