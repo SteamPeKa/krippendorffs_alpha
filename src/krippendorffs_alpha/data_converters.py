@@ -59,6 +59,10 @@ class _PreparedData(Generic[OT, UT, VT], object):
         return self.answers_tensor.shape[1]
 
     @property
+    def possible_values_count(self):
+        return len(self.possible_values)
+
+    @property
     def observers_names(self) -> Union[Tuple[int], Tuple[OT]]:
         if self.__observers_names is None:
             return tuple(i for i in range(self.observers_count))
