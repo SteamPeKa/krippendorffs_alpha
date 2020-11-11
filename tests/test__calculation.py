@@ -131,3 +131,125 @@ class TestCalcAlpha(object):
         testing_utils.assert_equal_tensors(DATA_MATRIX, prepared_data.answers_tensor)
         actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "interval")
         assert actual_alpha == pytest.approx(0.849, abs=0.001)
+
+    def test_wikipedia_nominal(self):
+        with open(os.path.join("tests", "example_wikipedia.csv"), "r") as f:
+            input_table = csv.reader(f, delimiter=",")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "*" else None
+            )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "nominal")
+        assert actual_alpha == pytest.approx(0.691, abs=0.001)
+
+    def test_wikipedia_interval(self):
+        with open(os.path.join("tests", "example_wikipedia.csv"), "r") as f:
+            input_table = csv.reader(f, delimiter=",")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "*" else None
+            )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "interval")
+        assert actual_alpha == pytest.approx(0.811, abs=0.001)
+
+
+class Test_CalcAlphaByPrecomputes(object):
+    def test_e_nominal(self):
+        metric_name = "nominal"
+        with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
+            input_table = csv.reader(f, delimiter="\t")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "NULL" else None
+            )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.743, abs=0.001)
+
+    def test_e_interval(self):
+        metric_name = "interval"
+        with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
+            input_table = csv.reader(f, delimiter="\t")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "NULL" else None
+            )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.849, abs=0.001)
+
+    def test_wikipedia_nominal(self):
+        metric_name = "nominal"
+        with open(os.path.join("tests", "example_wikipedia.csv"), "r") as f:
+            input_table = csv.reader(f, delimiter=",")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "*" else None
+            )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.691, abs=0.001)
+
+    def test_wikipedia_interval(self):
+        metric_name = "interval"
+        with open(os.path.join("tests", "example_wikipedia.csv"), "r") as f:
+            input_table = csv.reader(f, delimiter=",")
+            prepared_data = krippendorffs_alpha.data_converters.from_list_of_lists(
+                input_table=input_table,
+                header=True,
+                row_legend=True,
+                upper_level="observer",
+                value_constructor=lambda s: int(s.strip()) if s.strip() != "*" else None
+            )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.811, abs=0.001)

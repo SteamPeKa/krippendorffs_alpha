@@ -7,45 +7,34 @@ from typing import Union
 
 import numpy
 
-from ._calculation import _PreparedData, _calc_alpha
+from ._calculation import _PreparedData, _calc_alpha, _prepare_bootstrap_precomputes
 from .metrics import AbstractMetric
 
 
-def _precompute_tensors(prepared_data: _PreparedData, metric: Union[None, str, AbstractMetric]):
-    bounded_metric_tensor = prepared_data.get_metric_tensor(metric=metric,
-                                                            symmetric=False)
+def _precompute_tensors_for_unitwise_resampling(prepared_data: _PreparedData,
+                                                metric: Union[None, str, AbstractMetric]):
+    assignment_matrix, full_cross_disagreement_tensor = _prepare_bootstrap_precomputes(prepared_data=prepared_data,
+                                                                                       metric=metric)
+    # noinspection SpellCheckingInspection
+    cross_unit_disagreement = numpy.einsum("ijm"
+                                           "s->ms", full_cross_disagreement_tensor)
+    units_overlaps = assignment_matrix.sum(axis=0)
 
-    W_tensor = prepared_data.answers_tensor.copy()
-    assert W_tensor.shape == (prepared_data.observers_count,
-                              prepared_data.units_count,
-                              prepared_data.possible_values_count)
+    pairable_units_num_mask = numpy.zeros(units_overlaps.shape)
+    pairable_units_num_mask[units_overlaps > 1] = 1.0
 
-    Q_tensor = numpy.einsum("iuc,juk,ck->iju", W_tensor, W_tensor, bounded_metric_tensor)
-    assert Q_tensor.shape == (prepared_data.observers_count,
-                              prepared_data.observers_count,
-                              prepared_data.units_count)
+    pairable_overlaps = numpy.zeros(units_overlaps.shape)
+    pairable_overlaps[units_overlaps > 1] = units_overlaps[units_overlaps > 1]
 
-    P_tensor = W_tensor.sum(axis=2)
-    return W_tensor, Q_tensor, P_tensor, bounded_metric_tensor
+    norming_values = numpy.zeros(units_overlaps.shape)
+    norming_values[units_overlaps > 1] = 1.0 / (units_overlaps[units_overlaps > 1] - 1)
 
+    pairable_cross_unit_disagreement = numpy.einsum("n,m,nm->nm",
+                                                    pairable_units_num_mask,
+                                                    pairable_units_num_mask,
+                                                    cross_unit_disagreement)
 
-def _precompute_tensors_for_unitwise_resampling(prepared_data: _PreparedData, metric: Union[None, str, AbstractMetric]):
-    W_tensor = prepared_data.answers_tensor
-    metric_tensor = prepared_data.get_metric_tensor(metric, symmetric=False)
-
-    value_by_unit = numpy.einsum("ouv->uv", W_tensor)
-
-    overlaps = numpy.einsum("uv->u", value_by_unit)
-    not_pairable_units = overlaps <= 1
-    overlaps[not_pairable_units] = 0
-    value_by_unit[not_pairable_units, :] = 0
-
-    norming_values = 1.0 / (overlaps - 1.0)
-    norming_values[not_pairable_units] = 0
-
-    numerator_outer_sums = norming_values * numpy.einsum("iuc,juk,ck->u", W_tensor, W_tensor, metric_tensor)
-    D_matrix = numpy.einsum("nc,mk,ck->nm", value_by_unit, value_by_unit, metric_tensor)
-    return overlaps, numerator_outer_sums, D_matrix
+    return pairable_cross_unit_disagreement, pairable_overlaps, norming_values
 
 
 def _prepare_jackknife_indexing(total):
@@ -58,35 +47,40 @@ def _prepare_jackknife_indexing(total):
 def _ram_hungry_observerwise_jackknife(prepared_data: _PreparedData, metric: Union[None, str, AbstractMetric]):
     if prepared_data.observers_count <= 2:
         raise ValueError("Not enough observers for valid jackknifing results")
-    W_tensor, Q_tensor, P_tensor, bounded_metric_tensor = _precompute_tensors(prepared_data=prepared_data,
-                                                                              metric=metric)
-    observers_choices = _prepare_jackknife_indexing(prepared_data.observers_count)
+    assignment_matrix, full_cross_disagreement_tensor = _prepare_bootstrap_precomputes(prepared_data=prepared_data,
+                                                                                       metric=metric)
 
-    norming_values = (P_tensor[observers_choices, :]).sum(axis=1)
-    unpairable_units_masks = norming_values <= 1
-    norming_values[unpairable_units_masks] = 0.0
-    norming_values = 1.0 / (norming_values - 1.0)
-    norming_values[unpairable_units_masks] = 0.0
+    observers_masks = numpy.ones((prepared_data.observers_count, prepared_data.observers_count))
+    numpy.fill_diagonal(observers_masks, 0)
 
-    Q_col_sums = Q_tensor.sum(axis=1)
-    numerators = numpy.einsum("bu,bu->b",
-                              (
-                                      (numpy.tile(Q_col_sums.sum(axis=0), (prepared_data.observers_count, 1)))
-                                      - Q_col_sums  # I have no idea why Q_tensor is not symmetric
-                                      - Q_tensor.sum(axis=0)  # but Q[i,j,:] != Q[j,i,:].
-                                      + numpy.einsum("iiu->iu", Q_tensor)
-                              ),
-                              norming_values)
+    overlaps = numpy.einsum("bo,ou->bu", observers_masks, assignment_matrix)
 
-    frequencies = (W_tensor[observers_choices, :, :]).sum(axis=1)
-    frequencies[unpairable_units_masks, :] = 0
-    frequencies = frequencies.sum(axis=1)
+    pairable_unit_id_for_batches = numpy.zeros(overlaps.shape)
+    pairable_unit_id_for_batches[overlaps > 1] = 1
 
-    total_pairable_for_resample = frequencies.sum(axis=1)
+    norming_values = numpy.zeros(overlaps.shape)
+    norming_values[overlaps > 1] = 1.0 / (overlaps[overlaps > 1] - 1)
 
-    denominators = numpy.einsum("bc,bk,ck->b", frequencies, frequencies, bounded_metric_tensor)
+    full_cross_disagreement_tensor_for_batches = numpy.einsum("bi,bj,ijms->bijms",
+                                                              observers_masks,
+                                                              observers_masks,
+                                                              full_cross_disagreement_tensor)
+    # noinspection SpellCheckingInspection
+    prepared_observed_disagreements = numpy.einsum("bu,bijuu->b",
+                                                   norming_values,
+                                                   full_cross_disagreement_tensor_for_batches)
+    # noinspection SpellCheckingInspection
+    prepared_expected_disagreement = numpy.einsum("bm,bs,bijms->b",
+                                                  pairable_unit_id_for_batches,
+                                                  pairable_unit_id_for_batches,
+                                                  full_cross_disagreement_tensor_for_batches)
 
-    result = 1.0 - ((total_pairable_for_resample - 1.0) * (numerators / denominators))
+    pairable_answers_totals = numpy.einsum("bu,bu->b",
+                                           pairable_unit_id_for_batches,
+                                           overlaps)
+
+    result = 1.0 - ((pairable_answers_totals - 1.0) * (prepared_observed_disagreements /
+                                                       prepared_expected_disagreement))
     return numpy.array(result)
 
 
@@ -119,16 +113,23 @@ def observerwise_jackknife(prepared_data: _PreparedData, metric: Union[None, str
 
 
 def unitwise_jackknife(prepared_data: _PreparedData, metric: Union[None, str, AbstractMetric]):
-    overlaps, numerator_outer_sums, D_matrix = _precompute_tensors_for_unitwise_resampling(prepared_data=prepared_data,
-                                                                                           metric=metric)
-    D_row_sums = D_matrix.sum(axis=0)
-    D_col_sums = D_matrix.sum(axis=1)
-    S_value = D_row_sums.sum(axis=0)
-    D_diagonal = numpy.einsum("ii->i", D_matrix)
+    (pairable_cross_unit_disagreement,
+     pairable_overlaps,
+     norming_values) = _precompute_tensors_for_unitwise_resampling(prepared_data=prepared_data, metric=metric)
 
-    totals_for_batches = overlaps.sum() - overlaps
-    numerators_for_batches = numerator_outer_sums.sum() - numerator_outer_sums
-    denominator_for_batches = S_value - D_row_sums - D_col_sums + D_diagonal
+    row_disagreements = pairable_cross_unit_disagreement.sum(axis=0)
+    column_disagreements = pairable_cross_unit_disagreement.sum(axis=1)
+    overall_disagreement = pairable_cross_unit_disagreement.sum()
+    units_inner_disagreement = numpy.einsum("ii->i", pairable_cross_unit_disagreement)
 
-    result = 1 - ((totals_for_batches - 1) * (numerators_for_batches / denominator_for_batches))
+    expected_disagreements_for_batches = (overall_disagreement - row_disagreements - column_disagreements +
+                                          units_inner_disagreement)
+
+    totals_for_batches = pairable_overlaps.sum() - pairable_overlaps
+
+    observed_units_disagreements = norming_values * units_inner_disagreement
+
+    observed_disagreements_for_batches = observed_units_disagreements.sum() - observed_units_disagreements
+
+    result = 1 - ((totals_for_batches - 1) * (observed_disagreements_for_batches / expected_disagreements_for_batches))
     return result

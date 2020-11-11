@@ -103,3 +103,44 @@ def calc_alpha(prepared_data: _PreparedData[typing.Any, typing.Any, VT],
                                                                        omit_unpairable=True)
     return _calculation_routine(value_by_unit_matrix=value_by_unit_matrix,
                                 bounded_distance_matrix=bounded_distance_matrix)
+
+
+def _prepare_bootstrap_precomputes(prepared_data: _PreparedData[typing.Any, typing.Any, VT],
+                                   metric: typing.Union[None, AbstractMetric[VT], str]):
+    W_tensor = prepared_data.answers_tensor
+    asymmetric_metric_tensor = prepared_data.get_metric_tensor(metric=metric, symmetric=False)
+
+    assignment_matrix = W_tensor.sum(axis=2)
+    assert assignment_matrix.shape == (prepared_data.observers_count, prepared_data.units_count)
+    # noinspection SpellCheckingInspection
+    full_cross_disagreement_tensor = numpy.einsum("imc,jsk,ck->ijms", W_tensor, W_tensor, asymmetric_metric_tensor)
+    assert full_cross_disagreement_tensor.shape == (prepared_data.observers_count,
+                                                    prepared_data.observers_count,
+                                                    prepared_data.units_count,
+                                                    prepared_data.units_count)
+    return assignment_matrix, full_cross_disagreement_tensor
+
+
+def _calc_alpha_by_precomputes(assignment_matrix: numpy.ndarray,
+                               full_cross_disagreement_tensor: numpy.ndarray):
+    observers_count, units_count = assignment_matrix.shape
+    assert full_cross_disagreement_tensor.shape == (observers_count,
+                                                    observers_count,
+                                                    units_count,
+                                                    units_count)
+    units_overlaps = assignment_matrix.sum(axis=0)
+
+    pairable_units_id = numpy.zeros(units_overlaps.shape)
+    pairable_units_id[units_overlaps > 1] = 1
+
+    total_pairable_answers = numpy.einsum("u,u->", pairable_units_id, units_overlaps)
+
+    norming_values = numpy.zeros(units_overlaps.shape)
+    norming_values[units_overlaps > 1] = 1.0 / (units_overlaps[units_overlaps > 1] - 1.0)
+
+    # noinspection SpellCheckingInspection
+    prepared_observed_disagreement = numpy.einsum("u,ijuu->", norming_values, full_cross_disagreement_tensor)
+    prepared_expected_disagreement = numpy.einsum("m,s,ijms->",
+                                                  pairable_units_id, pairable_units_id, full_cross_disagreement_tensor)
+
+    return 1.0 - ((total_pairable_answers - 1) * (prepared_observed_disagreement / prepared_expected_disagreement))
