@@ -13,12 +13,11 @@ from .metrics import AbstractMetric
 
 def _precompute_tensors_for_unitwise_resampling(prepared_data: _PreparedData,
                                                 metric: Union[None, str, AbstractMetric]):
-    assignment_matrix, full_cross_disagreement_tensor = _prepare_bootstrap_precomputes(prepared_data=prepared_data,
-                                                                                       metric=metric)
-    # noinspection SpellCheckingInspection
-    cross_unit_disagreement = numpy.einsum("ijm"
-                                           "s->ms", full_cross_disagreement_tensor)
-    units_overlaps = assignment_matrix.sum(axis=0)
+    W_tensor = prepared_data.answers_tensor
+    asymmetric_metric_tensor = prepared_data.get_metric_tensor(metric=metric, symmetric=False)
+
+    cross_unit_disagreement = numpy.einsum("imc,jsk,ck->ms", W_tensor, W_tensor, asymmetric_metric_tensor)
+    units_overlaps = W_tensor.sum(axis=(2, 0))
 
     pairable_units_num_mask = numpy.zeros(units_overlaps.shape)
     pairable_units_num_mask[units_overlaps > 1] = 1.0
@@ -61,19 +60,19 @@ def _ram_hungry_observerwise_jackknife(prepared_data: _PreparedData, metric: Uni
     norming_values = numpy.zeros(overlaps.shape)
     norming_values[overlaps > 1] = 1.0 / (overlaps[overlaps > 1] - 1)
 
-    full_cross_disagreement_tensor_for_batches = numpy.einsum("bi,bj,ijms->bijms",
-                                                              observers_masks,
-                                                              observers_masks,
-                                                              full_cross_disagreement_tensor)
+    cross_unit_disagreements = numpy.einsum("bi,bj,ijms->bms",
+                                            observers_masks,
+                                            observers_masks,
+                                            full_cross_disagreement_tensor)
     # noinspection SpellCheckingInspection
-    prepared_observed_disagreements = numpy.einsum("bu,bijuu->b",
+    prepared_observed_disagreements = numpy.einsum("bu,buu->b",
                                                    norming_values,
-                                                   full_cross_disagreement_tensor_for_batches)
+                                                   cross_unit_disagreements)
     # noinspection SpellCheckingInspection
-    prepared_expected_disagreement = numpy.einsum("bm,bs,bijms->b",
+    prepared_expected_disagreement = numpy.einsum("bm,bs,bms->b",
                                                   pairable_unit_id_for_batches,
                                                   pairable_unit_id_for_batches,
-                                                  full_cross_disagreement_tensor_for_batches)
+                                                  cross_unit_disagreements)
 
     pairable_answers_totals = numpy.einsum("bu,bu->b",
                                            pairable_unit_id_for_batches,
@@ -131,5 +130,6 @@ def unitwise_jackknife(prepared_data: _PreparedData, metric: Union[None, str, Ab
 
     observed_disagreements_for_batches = observed_units_disagreements.sum() - observed_units_disagreements
 
-    result = 1 - ((totals_for_batches - 1) * (observed_disagreements_for_batches / expected_disagreements_for_batches))
+    result = 1 - ((totals_for_batches - 1) * (observed_disagreements_for_batches /
+                                              expected_disagreements_for_batches))
     return result

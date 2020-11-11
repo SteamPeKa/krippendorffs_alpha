@@ -16,6 +16,6 @@ setuptools.setup(
     package_dir={"": "src"},
     test_suite="tests",
     zip_safe=False,
-    install_requires=["numpy==1.19.2",
-                      "pytest>=2.8.5"]
+    install_requires=["numpy>=1.15.0",
+                      "pytest>=3.0.0"]
 )

@@ -1,3 +1,2 @@
-numpy==1.19.2 # version used in Anaconda 4.0.0.
-pytest>=2.8.5 # version used in Anaconda 4.0.0.
-# scipy>=0.17.0 # version used in Anaconda 4.0.0.
+numpy<=1.19.2 # There is some bugs with numpy 1.19.4 making it not able to be set up: https://tinyurl.com/y3dm3h86
+pytest>=3.0.0
