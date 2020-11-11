@@ -1,0 +1,92 @@
+{
+  "OBSERVER A": {
+    "UNIT 2": "Z",
+    "UNIT 3": "V",
+    "UNIT 5": "V",
+    "UNIT 8": "X",
+    "UNIT 9": "Y",
+    "UNIT 10": "X",
+    "VERIFICATION 1": [
+      "Y",
+      "Z",
+      "Z"
+    ],
+    "VERIFICATION 2": [
+      "W",
+      "W",
+      "Y"
+    ]
+  },
+  "OBSERVER B": {
+    "UNIT 1": "Y",
+    "UNIT 5": "V",
+    "UNIT 6": "Y",
+    "UNIT 7": "Z",
+    "UNIT 9": "Y",
+    "UNIT 10": "X",
+    "VERIFICATION 1": [
+      "W",
+      "Z",
+      "Y"
+    ],
+    "VERIFICATION 2": [
+      "W",
+      "W",
+      "X"
+    ]
+  },
+  "OBSERVER C": {
+    "UNIT 1": "X",
+    "UNIT 2": "Z",
+    "UNIT 4": "Y",
+    "UNIT 6": "Z",
+    "UNIT 8": "X",
+    "UNIT 10": "W",
+    "VERIFICATION 1": [
+      "Z",
+      "Y",
+      "Y"
+    ],
+    "VERIFICATION 2": [
+      "W",
+      "W",
+      "V"
+    ]
+  },
+  "OBSERVER D": {
+    "UNIT 1": "X",
+    "UNIT 3": "V",
+    "UNIT 4": "X",
+    "UNIT 5": "W",
+    "UNIT 7": "Y",
+    "UNIT 8": "Y",
+    "VERIFICATION 1": [
+      "X",
+      "Y",
+      "Y"
+    ],
+    "VERIFICATION 2": [
+      "X",
+      "W",
+      "W"
+    ]
+  },
+  "OBSERVER E": {
+    "UNIT 2": "X",
+    "UNIT 3": "Z",
+    "UNIT 4": "V",
+    "UNIT 6": "V",
+    "UNIT 7": "Y",
+    "UNIT 9": "V",
+    "VERIFICATION 1": [
+      "X",
+      "V",
+      "Y"
+    ],
+    "VERIFICATION 2": [
+      "Y",
+      "Z",
+      "V"
+    ]
+  }
+}

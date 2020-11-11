@@ -1,0 +1,51 @@
+{
+  "OBSERVER A": {
+    "UNIT 1": "1",
+    "UNIT 2": "2",
+    "UNIT 3": "3",
+    "UNIT 4": "3",
+    "UNIT 5": "2",
+    "UNIT 6": "1",
+    "UNIT 7": "4",
+    "UNIT 8": "1",
+    "UNIT 9": "2"
+  },
+  "OBSERVER B": {
+    "UNIT 1": "1",
+    "UNIT 10": "5",
+    "UNIT 12": "3",
+    "UNIT 2": "2",
+    "UNIT 3": "3",
+    "UNIT 4": "3",
+    "UNIT 5": "2",
+    "UNIT 6": "2",
+    "UNIT 7": "4",
+    "UNIT 8": "1",
+    "UNIT 9": "2"
+  },
+  "OBSERVER C": {
+    "UNIT 10": "5",
+    "UNIT 11": "1",
+    "UNIT 2": "3",
+    "UNIT 3": "3",
+    "UNIT 4": "3",
+    "UNIT 5": "2",
+    "UNIT 6": "3",
+    "UNIT 7": "4",
+    "UNIT 8": "2",
+    "UNIT 9": "2"
+  },
+  "OBSERVER D": {
+    "UNIT 1": "1",
+    "UNIT 10": "5",
+    "UNIT 11": "1",
+    "UNIT 2": "2",
+    "UNIT 3": "3",
+    "UNIT 4": "3",
+    "UNIT 5": "2",
+    "UNIT 6": "4",
+    "UNIT 7": "4",
+    "UNIT 8": "1",
+    "UNIT 9": "2"
+  }
+}

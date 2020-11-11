@@ -21,7 +21,13 @@ class _PreparedData(Generic[OT, UT, VT], object):
     def __init__(self, answers_tensor: numpy.ndarray, possible_values: Iterable[VT],
                  units_names: Union[None, Iterable[UT]] = None, observers_names: Union[None, Iterable[OT]] = None):
         assert len(answers_tensor.shape) == 3, answers_tensor.shape  # (O, U, V)
-        self.__answers_tensor = numpy.array(answers_tensor, copy=True)
+
+        norming_values = answers_tensor.sum(axis=2)
+        norming_values[norming_values == 0] = 1
+        norming_values = 1.0 / norming_values
+
+        self.__answers_tensor = numpy.einsum("ouv,ou->ouv", answers_tensor, norming_values)
+
         self.__answers_tensor.flags.writeable = False
         possible_values = tuple(possible_values)
         assert len(possible_values) == answers_tensor.shape[2]
@@ -141,35 +147,38 @@ def from_dict_of_dicts(input_table: Union[Dict[Union[OT, UT], Dict[Union[OT, UT]
                 _result.append(value_constructor(_raw_answer))
         return _result
 
-    def _get_value(_observer_key, _unit_key) -> Union[None, List[VT]]:
-        if upper_level == "observer":
-            _upper_key = _observer_key
-            _lower_key = _unit_key
-        elif upper_level == "unit":
-            _upper_key = _unit_key
-            _lower_key = _observer_key
-        else:
-            raise ValueError(f"Unsupported upper_level type: {upper_level}")
-
-        _raw_value = input_table.get(_upper_key, {}).get(_lower_key, None)
-        return _prepare_value(_raw_value)
-
     possible_values, track_value = init_possible_values(possible_values)
     if track_value:
         for lower_key_to_raw_answer in input_table.values():
-            for lower_key, raw_value in lower_key_to_raw_answer.items():
+            for raw_value in lower_key_to_raw_answer.values():
                 for answer in _prepare_value(raw_value):
                     if answer not in possible_values:
                         possible_values.append(answer)
     possible_values = tuple(possible_values)
 
     answers_tensor = numpy.zeros(shape=(len(observers_names), len(units_names), len(possible_values)))
-    for observer_index, observer_id in enumerate(observers_names):
-        for unit_index, unit_id in enumerate(units_names):
-            for answer in _get_value(observer_id, unit_id):
-                assert answer in possible_values
+    for upper_key, lower_key_to_raw_answer in input_table.items():
+        for lower_key, raw_answer in lower_key_to_raw_answer.items():
+            if upper_level == "observer":
+                observer_id = upper_key
+                unit_id = lower_key
+            elif upper_level == "unit":
+                unit_id = upper_key
+                observer_id = lower_key
+            else:
+                raise ValueError(f"Unsupported upper_level type: {upper_level}")
+            assert observer_id in observers_names
+            observer_index = observers_names.index(observer_id)
+            assert 0 <= observer_index < len(observers_names)
+            assert unit_id in units_names
+            unit_index = units_names.index(unit_id)
+            assert 0 <= unit_index <= len(units_names)
+            for answer in _prepare_value(raw_answer):
+                assert answer in possible_values, (answer, possible_values)
                 answer_index = possible_values.index(answer)
+                assert 0 <= answer_index < len(possible_values)
                 answers_tensor[observer_index, unit_index, answer_index] += 1
+
     return _PreparedData(answers_tensor=answers_tensor,
                          possible_values=possible_values,
                          units_names=units_names,

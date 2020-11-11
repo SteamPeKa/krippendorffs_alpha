@@ -3,6 +3,9 @@
 # Creation time: 19:33
 # Creator: SteamPeKa
 
+import json
+import os
+
 import numpy
 
 import krippendorffs_alpha
@@ -157,7 +160,10 @@ class TestFromListOfLists(object):
                                                                                    value_constructor=constructor,
                                                                                    possible_values=possible_values, )
             testing_utils.assert_collections_equal_as_sets(expected_values, prepared_data.possible_values)
-
+            if possible_values is not None:
+                assert all(a == b
+                           for a, b in
+                           zip(possible_values, prepared_data.possible_values))  # checking the initial order
             values_permutation = tuple(expected_values.index(new_index) for new_index in prepared_data.possible_values)
             expected_result = expected_result[:, :, values_permutation]
 
@@ -707,3 +713,404 @@ class TestFromListOfLists(object):
                      header="make",
                      row_legend="make",
                      possible_values=[1, 2, 3, 4, 5])
+
+    def test_observer_upper_level_str_value_no_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=False,
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_no_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=False,
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_no_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=False,
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_no_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=False,
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_first_row_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=True,
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_first_row_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=True,
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_first_row_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=True,
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_first_row_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=True,
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_generate_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header="make",
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_generate_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header="make",
+                     row_legend=False,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_generate_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header="make",
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_generate_header_no_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header="make",
+                     row_legend=False,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_no_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=False,
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_no_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=False,
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_no_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=False,
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_no_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=False,
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_first_row_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=True,
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_first_row_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=True,
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_first_row_header_first_col_row_legend_with_possible_values_order_2(
+            self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=True,
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_first_row_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=True,
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_generate_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header="make",
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_generate_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header="make",
+                     row_legend=True,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_generate_header_first_col_row_legend_with_possible_values_order_2(
+            self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header="make",
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_generate_header_first_col_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header="make",
+                     row_legend=True,
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_no_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=False,
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_no_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=False,
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_no_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=False,
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_no_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=False,
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_first_row_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header=True,
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_first_row_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header=True,
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_first_row_header_generate_row_legend_with_possible_values_order_2(
+            self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header=True,
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_first_row_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header=True,
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_observer_upper_level_str_value_generate_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     header="make",
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_unit_upper_level_str_value_generate_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     header="make",
+                     row_legend="make",
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_observer_upper_level_int_constructor_generate_header_generate_row_legend_with_possible_values_order_2(
+            self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     header="make",
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+    def test_unit_upper_level_int_constructor_generate_header_generate_row_legend_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     header="make",
+                     row_legend="make",
+                     possible_values=[5, 4, 3, 2, 1])
+
+
+class TestFromDictOfDicts(object):
+    with open(os.path.join("tests", "example_E_data.json"), "r") as f:
+        __input_data = json.load(f)
+
+    @classmethod
+    def routine(cls, upper_level, constructor, possible_values):
+        if possible_values is not None:
+            if constructor is not None:
+                possible_values = [constructor(v) for v in possible_values]
+        expected_values = set()
+        expected_units = set()
+        expected_observers = set()
+
+        input_table = {}
+        if upper_level == "observer":
+            for observer_id, observers_answers in cls.__input_data.items():
+                expected_observers.add(observer_id)
+                for unit_id, answer in observers_answers.items():
+                    expected_units.add(unit_id)
+                    assert input_table.setdefault(observer_id, {}).setdefault(unit_id, answer) == answer
+                    expected_values.add(answer)
+        elif upper_level == "unit":
+            for observer_id, observers_answers in cls.__input_data.items():
+                expected_observers.add(observer_id)
+                for unit_id, answer in observers_answers.items():
+                    expected_units.add(unit_id)
+                    assert input_table.setdefault(unit_id, {}).setdefault(observer_id, answer) == answer
+                    expected_values.add(answer)
+        else:
+            raise NotImplementedError(f"Unknown upper_level: {upper_level}")
+
+        testing_utils.assert_collections_equal_as_sets(expected_values, {"1", "2", "3", "4", "5"})
+        expected_values = tuple(POSSIBLE_VALUES)
+        if constructor is not None:
+            expected_values = tuple(constructor(v) for v in expected_values)
+
+        testing_utils.assert_collections_equal_as_sets(expected_units,
+                                                       {"UNIT 1", "UNIT 2", "UNIT 3", "UNIT 4", "UNIT 5", "UNIT 6",
+                                                        "UNIT 7", "UNIT 8", "UNIT 9", "UNIT 10", "UNIT 11", "UNIT 12"})
+        expected_units = ("UNIT 1", "UNIT 2", "UNIT 3", "UNIT 4", "UNIT 5", "UNIT 6",
+                          "UNIT 7", "UNIT 8", "UNIT 9", "UNIT 10", "UNIT 11", "UNIT 12")
+
+        testing_utils.assert_collections_equal_as_sets(expected_observers, ("OBSERVER A", "OBSERVER B",
+                                                                            "OBSERVER C", "OBSERVER D"))
+        expected_observers = ("OBSERVER A", "OBSERVER B", "OBSERVER C", "OBSERVER D")
+
+        if constructor is not None:
+            # noinspection PyCallingNonCallable
+            expected_values = [constructor(v) for v in expected_values]
+
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(input_table=input_table,
+                                                                               upper_level=upper_level,
+                                                                               value_constructor=constructor,
+                                                                               possible_values=possible_values)
+        expected_result = DATA_MATRIX.copy()
+
+        testing_utils.assert_collections_equal_as_sets(expected_observers, prepared_data.observers_names)
+        observers_permutation = tuple(expected_observers.index(new_name)
+                                      for new_name in prepared_data.observers_names)
+        expected_result = expected_result[observers_permutation, :, :]
+
+        testing_utils.assert_collections_equal_as_sets(expected_units, prepared_data.units_names)
+        units_permutation = tuple(expected_units.index(new_index) for new_index in prepared_data.units_names)
+        expected_result = expected_result[:, units_permutation, :]
+
+        testing_utils.assert_collections_equal_as_sets(expected_values, prepared_data.possible_values)
+        if possible_values is not None:
+            assert all(a == b
+                       for a, b in zip(possible_values, prepared_data.possible_values))  # checking the initial order
+        values_permutation = tuple(expected_values.index(new_index) for new_index in prepared_data.possible_values)
+        expected_result = expected_result[:, :, values_permutation]
+
+        testing_utils.assert_equal_tensors(expected_result, prepared_data.answers_tensor,
+                                           additional_string=f"{expected_observers}\n"
+                                                             f"{prepared_data.observers_names}\n"
+                                                             f"{observers_permutation}\n\n"
+                                                             f"{expected_units}\n"
+                                                             f"{prepared_data.units_names}\n"
+                                                             f"{units_permutation}\n\n"
+                                                             f"{expected_values}\n"
+                                                             f"{prepared_data.possible_values}\n"
+                                                             f"{possible_values}\n"
+                                                             f"{values_permutation}")
+
+    def test_upper_observer_no_constructor_no_possible_values(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     possible_values=None)
+
+    def test_upper_unit_no_constructor_no_possible_values(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     possible_values=None)
+
+    def test_upper_observer_int_constructor_no_possible_values(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     possible_values=None)
+
+    def test_upper_unit_int_constructor_no_possible_values(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     possible_values=None)
+
+    def test_upper_observer_no_constructor_with_possible_values_order_1(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     possible_values=["1", "2", "3", "4", "5"])
+
+    def test_upper_observer_no_constructor_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=None,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_upper_unit_no_constructor_with_possible_values_order_1(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     possible_values=["1", "2", "3", "4", "5"])
+
+    def test_upper_unit_no_constructor_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=None,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_upper_observer_int_constructor_with_possible_values_order_1(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     possible_values=["1", "2", "3", "4", "5"])
+
+    def test_upper_observer_int_constructor_with_possible_values_order_2(self):
+        self.routine(upper_level="observer",
+                     constructor=int,
+                     possible_values=["5", "4", "3", "2", "1"])
+
+    def test_upper_unit_int_constructor_with_possible_values_order_1(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     possible_values=["1", "2", "3", "4", "5"])
+
+    def test_upper_unit_int_constructor_with_possible_values_order_2(self):
+        self.routine(upper_level="unit",
+                     constructor=int,
+                     possible_values=["5", "4", "3", "2", "1"])

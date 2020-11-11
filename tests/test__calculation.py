@@ -4,6 +4,7 @@
 # Creator: SteamPeKa
 
 import csv
+import json
 import os
 
 import numpy
@@ -101,7 +102,7 @@ class Test_CalcAlpha(object):
         assert actual_alpha == pytest.approx(0.849, abs=0.001)
 
 
-class TestCalcAlpha(object):
+class TestCalcAlphaFromListOrLists(object):
     def test_e_nominal(self):
         with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
             input_table = csv.reader(f, delimiter="\t")
@@ -161,7 +162,57 @@ class TestCalcAlpha(object):
         assert actual_alpha == pytest.approx(0.811, abs=0.001)
 
 
-class Test_CalcAlphaByPrecomputes(object):
+class TestCalcAlphaFromDictOfDicts(object):
+    def test_e_nominal(self):
+        with open(os.path.join("tests", "example_E_data.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "nominal")
+        assert actual_alpha == pytest.approx(0.743, abs=0.001)
+
+    def test_e_interval(self):
+        with open(os.path.join("tests", "example_E_data.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "interval")
+        assert actual_alpha == pytest.approx(0.849, abs=0.001)
+
+    def test_wikipedia_nominal(self):
+        with open(os.path.join("tests", "example_wikipedia.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "nominal")
+        assert actual_alpha == pytest.approx(0.691, abs=0.001)
+
+    def test_wikipedia_interval(self):
+        with open(os.path.join("tests", "example_wikipedia.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        actual_alpha = krippendorffs_alpha._calculation.calc_alpha(prepared_data, "interval")
+        assert actual_alpha == pytest.approx(0.811, abs=0.001)
+
+
+class Test_CalcAlphaByPrecomputesFromListOfLists(object):
     def test_e_nominal(self):
         metric_name = "nominal"
         with open(os.path.join("tests", "example_E_data.tsv"), "r") as f:
@@ -242,6 +293,92 @@ class Test_CalcAlphaByPrecomputes(object):
                 upper_level="observer",
                 value_constructor=lambda s: int(s.strip()) if s.strip() != "*" else None
             )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.811, abs=0.001)
+
+
+class Test_CalcAlphaByPrecomputesFromDictOfDicts(object):
+    def test_e_nominal(self):
+        metric_name = "nominal"
+        with open(os.path.join("tests", "example_E_data.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.743, abs=0.001)
+
+    def test_e_interval(self):
+        metric_name = "interval"
+        with open(os.path.join("tests", "example_E_data.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.849, abs=0.001)
+
+    def test_wikipedia_nominal(self):
+        metric_name = "nominal"
+        with open(os.path.join("tests", "example_wikipedia.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
+
+        (assignment_matrix,
+         full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(
+            prepared_data=prepared_data,
+            metric=metric_name
+        )
+        actual_alpha = krippendorffs_alpha._calculation._calc_alpha_by_precomputes(
+            assignment_matrix=assignment_matrix,
+            full_cross_disagreement_tensor=full_cross_disagreement_tensor
+        )
+        assert actual_alpha == pytest.approx(0.691, abs=0.001)
+
+    def test_wikipedia_interval(self):
+        metric_name = "interval"
+        with open(os.path.join("tests", "example_wikipedia.json"), "r") as f:
+            input_table = json.load(f)
+        prepared_data = krippendorffs_alpha.data_converters.from_dict_of_dicts(
+            input_table=input_table,
+            upper_level="observer",
+            value_constructor=int
+        )
 
         (assignment_matrix,
          full_cross_disagreement_tensor) = krippendorffs_alpha._calculation._prepare_bootstrap_precomputes(

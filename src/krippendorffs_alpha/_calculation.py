@@ -14,16 +14,6 @@ from .metrics import AbstractMetric
 Protected member of package designed for encapsulate inconvenient  calculation calls and for unit-testing.
 """
 
-__CREATED_SUMMING_BOUNDS = {}
-
-
-def drop_summing_bounds_cache() -> None:
-    """
-    Clears cache of summing bounds arrays.
-    """
-    global __CREATED_SUMMING_BOUNDS
-    __CREATED_SUMMING_BOUNDS.clear()
-
 
 def _make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
                                                 omit_unpairable: bool = True) -> numpy.ndarray:
@@ -38,8 +28,8 @@ def _make_value_by_unit_matrix_from_data_matrix(data_matrix: numpy.ndarray,
     assert len(data_matrix.shape) == 3
     norming_values = data_matrix.sum(axis=2)
     norming_values[norming_values == 0] = 1
-    normed_data_matrix = data_matrix / norming_values[:, :, numpy.newaxis]
-    raw_value_by_unit_matrix = normed_data_matrix.sum(axis=0).T
+    assert numpy.max(numpy.abs(norming_values - 1)) < 1e-8
+    raw_value_by_unit_matrix = data_matrix.sum(axis=0).T
     if not omit_unpairable:
         return raw_value_by_unit_matrix
 

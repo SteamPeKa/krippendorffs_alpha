@@ -3,16 +3,16 @@
 # Creation time: 19:16
 # Creator: SteamPeKa
 
-from typing import Collection, Hashable
+from typing import Collection, Hashable, Union
 
 import numpy
 import pytest
 
 
-def assert_equal_tensors(expected: numpy.ndarray, actual: numpy.ndarray):
+def assert_equal_tensors(expected: numpy.ndarray, actual: numpy.ndarray, additional_string: Union[None, str] = None):
     assert expected.shape == actual.shape, f"Tensors have different shapes: {expected.shape} and {actual.shape}"
     abs_difference = numpy.max(numpy.abs(expected - actual))
-    assert abs_difference == pytest.approx(0), (
+    fail_message = (
         f"Tensors are not equal with maximum abs difference of {abs_difference}.\n"
         f"Expected:\n"
         f"{expected}\n"
@@ -21,6 +21,9 @@ def assert_equal_tensors(expected: numpy.ndarray, actual: numpy.ndarray):
         f"Difference:\n"
         f"{expected - actual}"
     )
+    if additional_string is not None:
+        fail_message += "\n####\n" + additional_string + "\n####"
+    assert abs_difference == pytest.approx(0), fail_message
 
 
 def assert_collections_equal_as_sets(expected: Collection[Hashable], actual: Collection[Hashable]):
