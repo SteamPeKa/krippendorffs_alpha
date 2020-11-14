@@ -64,7 +64,7 @@ def _calculation_routine(value_by_unit_matrix: numpy.ndarray, bounded_distance_m
     assert numpy.all(overlap > 1), overlap
     answers_frequencies = value_by_unit_matrix.sum(axis=1)
     total_pairable_values = numpy.sum(answers_frequencies)
-    assert total_pairable_values == numpy.sum(overlap)
+    assert numpy.abs(total_pairable_values - numpy.sum(overlap)) < 1e-08
     unit_norming = numpy.divide(1, overlap - 1)
 
     denominator = numpy.einsum("c,k,ck->", answers_frequencies, answers_frequencies, bounded_distance_matrix)
