@@ -133,7 +133,7 @@ def from_dict_of_dicts(input_table: Union[Dict[Union[OT, UT], Dict[Union[OT, UT]
     def _prepare_value(_raw_value) -> Union[None, List[VT]]:
         if _raw_value is None:
             return []
-        if isinstance(_raw_value, list):
+        if isinstance(_raw_value, list) or isinstance(_raw_value, tuple):
             _raw_answers_iterator = _raw_value
         else:
             _raw_answers_iterator = [_raw_value]
@@ -162,9 +162,11 @@ def from_dict_of_dicts(input_table: Union[Dict[Union[OT, UT], Dict[Union[OT, UT]
             if upper_level == "observer":
                 observer_id = upper_key
                 unit_id = lower_key
+                lower_level = "unit"
             elif upper_level == "unit":
                 unit_id = upper_key
                 observer_id = lower_key
+                lower_level = "observer"
             else:
                 raise ValueError(f"Unsupported upper_level type: {upper_level}")
             assert observer_id in observers_names
@@ -173,7 +175,13 @@ def from_dict_of_dicts(input_table: Union[Dict[Union[OT, UT], Dict[Union[OT, UT]
             assert unit_id in units_names
             unit_index = units_names.index(unit_id)
             assert 0 <= unit_index <= len(units_names)
-            for answer in _prepare_value(raw_answer):
+            try:
+                answers_sequence = _prepare_value(raw_answer)
+            except Exception as e:
+                raise ValueError(f"Caught {type(e)} on constructor call during data preparation in "
+                                 f"{upper_level} {upper_key}, {lower_level} {lower_key}"
+                                 f"Raw value: {raw_answer}")
+            for answer in answers_sequence:
                 assert answer in possible_values, (answer, possible_values)
                 answer_index = possible_values.index(answer)
                 assert 0 <= answer_index < len(possible_values)

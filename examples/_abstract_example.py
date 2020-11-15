@@ -152,7 +152,7 @@ class AbstractExample(object):
         ]
 
         sums_per_units = [fractions.Fraction(0, 1) for _ in self.units_names]
-        prepared_values_by_unit_table = [[""] + list(self.units_names) + [r"$n_{\bullet,v}$"]]
+        prepared_values_by_unit_table = [[""] + list(self.units_names) + [r"$n_{\cdot,v}$"]]
         overlaps = self.units_overlaps
         frequencies = []
         for possible_value, weights in zip(self.possible_answers, self.values_by_units_table):
@@ -166,7 +166,7 @@ class AbstractExample(object):
             for i in range(self.units_count):
                 sums_per_units[i] += weights[i]
         prepared_values_by_unit_table.append(
-            ["${}$".format(r"n_{u,\bullet}")] + list("${}$".format(fraction_to_str(weight, style=formulas_style))
+            ["${}$".format(r"n_{u,\cdot}")] + list("${}$".format(fraction_to_str(weight, style=formulas_style))
                                                      for weight in sums_per_units) + [
                 "${}$".format(fraction_to_str(sum(frequencies), style=formulas_style))]
         )
@@ -182,7 +182,7 @@ class AbstractExample(object):
                 for value in row
             ])
         result_nodes.append("{header}\n"
-                            "The upper-diagonal matrix with elements $g_{{c,k}}=n_{{\\bullet,c}}\cdot n_{{\\bullet,c}}$\n\n"
+                            "The upper-diagonal matrix with elements $g_{{c,k}}=n_{{\\cdot,c}}\cdot n_{{\\cdot,c}}$\n\n"
                             "\n\n{table}".format(
             header=prepare_markdown_header("Expected not normed coincidence matrix", level=headers_level),
             table=make_table(expected_not_normed_coincidence_table, left_legend=True, right_legend=False,
@@ -199,7 +199,7 @@ class AbstractExample(object):
         result_nodes.append("{header}\n"
                             "The upper-diagonal matrix with elements "
                             "$h_{{c,k}}=\\sum\\limits_{{u}}{{\\frac{{n_{{u,c}}\cdot n_{{u,c}}}}"
-                            "{{n_{{u,\\bullet}}-1}}}}$\n\n"
+                            "{{n_{{u,\\cdot}}-1}}}}$\n\n"
                             "{table}".format(
             header=prepare_markdown_header("Observed semi-normed coincidence matrix", level=headers_level),
             table=make_table(observed_semi_normed_coincidence_table, left_legend=True, right_legend=False,
@@ -301,7 +301,7 @@ class AbstractExample(object):
         fraction_result, decimal_result, result_for_tex = self.__evaluate_alpha(metric_name)
         return fraction_result
 
-    def __evaluate_alpha(self, metric_name, fraction_style="small_tex"):
+    def __evaluate_alpha(self, metric_name, fraction_style="tex_small"):
         if (metric_name, fraction_style) not in self.__alpha_values:
             D_o_tex = []
             D_e_tex = []
@@ -354,7 +354,7 @@ class AbstractExample(object):
                     (fractions.Fraction(n, 1) - fractions.Fraction(1, 1)) * (D_o_fraction / D_e_fraction))
             assert isinstance(fraction_result, fractions.Fraction)
             decimal_result = "{:7.5f}".format(float(fraction_result))
-            formula = r"1- (n_{\bullet,\bullet}-1)\frac{\sum\limits_{c}\sum\limits_{k}\delta^{2}_{c,k}\cdot h_{c,k}}" \
+            formula = r"1- (n_{\cdot,\cdot}-1)\frac{\sum\limits_{c}\sum\limits_{k}\delta^{2}_{c,k}\cdot h_{c,k}}" \
                       r"{\sum\limits_{c}\sum\limits_{k}\delta^{2}_{c,k}g_{c,k}}"
             result_for_tex = fr"""\begin{{align*}}\
 \alpha_{{\text{{{metric_name}}}}} &= {formula} \\
@@ -362,3 +362,11 @@ class AbstractExample(object):
 \end{{align*}}"""
             self.__alpha_values[(metric_name, fraction_style)] = fraction_result, decimal_result, result_for_tex
         return self.__alpha_values[(metric_name, fraction_style)]
+
+    def get_data(self):
+        return {
+            "input_table": self.__general_format_data,
+            "upper_level": "observer",
+            "value_constructor": self.possible_answers.index,
+            "possible_values": [v for v in range(self.possible_answers_count)]
+        }
