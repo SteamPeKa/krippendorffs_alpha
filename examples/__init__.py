@@ -25,7 +25,7 @@ all_examples = {
         "example": multiple_assignments_example_A,
         "metrics": ["nominal", "interval", "ratio"]
     },
-    "From Wikidedia ": {
+    "From Wikipedia ": {
         "example": wikipedia_example_A,
         "metrics": ["nominal", "interval", "ratio"]
     }

@@ -49,6 +49,7 @@ class RatioMetric(AbstractMetric[VT]):
 
 
 class CircularMetric(AbstractMetric[VT]):
+    # noinspection PyUnusedLocal
     def __init__(self, possible_values_count: int = None, *args, **kwargs):
         super().__init__()
         if possible_values_count is None:

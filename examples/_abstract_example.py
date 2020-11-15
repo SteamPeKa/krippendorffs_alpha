@@ -167,7 +167,7 @@ class AbstractExample(object):
                 sums_per_units[i] += weights[i]
         prepared_values_by_unit_table.append(
             ["${}$".format(r"n_{u,\cdot}")] + list("${}$".format(fraction_to_str(weight, style=formulas_style))
-                                                     for weight in sums_per_units) + [
+                                                   for weight in sums_per_units) + [
                 "${}$".format(fraction_to_str(sum(frequencies), style=formulas_style))]
         )
         result_nodes.append("{header}\n\n{table}".format(
@@ -181,13 +181,14 @@ class AbstractExample(object):
                 "${}$".format(fraction_to_str(value, style=formulas_style))
                 for value in row
             ])
-        result_nodes.append("{header}\n"
-                            "The upper-diagonal matrix with elements $g_{{c,k}}=n_{{\\cdot,c}}\cdot n_{{\\cdot,c}}$\n\n"
-                            "\n\n{table}".format(
-            header=prepare_markdown_header("Expected not normed coincidence matrix", level=headers_level),
-            table=make_table(expected_not_normed_coincidence_table, left_legend=True, right_legend=False,
-                             header=True, footer=False)
-        ))
+        result_nodes.append(
+            "{header}\n"
+            "The upper-diagonal matrix with elements $g_{{c,k}}=n_{{\\cdot,c}}\\cdot n_{{\\cdot,c}}$\n\n"
+            "\n\n{table}".format(
+                header=prepare_markdown_header("Expected not normed coincidence matrix", level=headers_level),
+                table=make_table(expected_not_normed_coincidence_table, left_legend=True, right_legend=False,
+                                 header=True, footer=False)
+            ))
 
         observed_semi_normed_coincidence_table = [[""] + list(self.possible_answers)]
         for row_index, row in enumerate(self.observer_semi_normed_coincidence_matrix):
@@ -198,13 +199,13 @@ class AbstractExample(object):
 
         result_nodes.append("{header}\n"
                             "The upper-diagonal matrix with elements "
-                            "$h_{{c,k}}=\\sum\\limits_{{u}}{{\\frac{{n_{{u,c}}\cdot n_{{u,c}}}}"
+                            "$h_{{c,k}}=\\sum\\limits_{{u}}{{\\frac{{n_{{u,c}}\\cdot n_{{u,c}}}}"
                             "{{n_{{u,\\cdot}}-1}}}}$\n\n"
-                            "{table}".format(
-            header=prepare_markdown_header("Observed semi-normed coincidence matrix", level=headers_level),
-            table=make_table(observed_semi_normed_coincidence_table, left_legend=True, right_legend=False,
-                             header=True, footer=False)
-        ))
+                            "{table}".format(header=prepare_markdown_header("Observed semi-normed coincidence matrix",
+                                                                            level=headers_level),
+                                             table=make_table(observed_semi_normed_coincidence_table,
+                                                              left_legend=True, right_legend=False,
+                                                              header=True, footer=False)))
         if len(metrics) != 0:
             result_nodes.append(prepare_markdown_header("Values for some metrics", level=headers_level))
         for metric_name in metrics:
@@ -354,11 +355,13 @@ class AbstractExample(object):
                     (fractions.Fraction(n, 1) - fractions.Fraction(1, 1)) * (D_o_fraction / D_e_fraction))
             assert isinstance(fraction_result, fractions.Fraction)
             decimal_result = "{:7.5f}".format(float(fraction_result))
+            frac_num = fraction_result.numerator
+            frac_den = fraction_result.denominator
             formula = r"1- (n_{\cdot,\cdot}-1)\frac{\sum\limits_{c}\sum\limits_{k}\delta^{2}_{c,k}\cdot h_{c,k}}" \
                       r"{\sum\limits_{c}\sum\limits_{k}\delta^{2}_{c,k}g_{c,k}}"
             result_for_tex = fr"""\begin{{align*}}\
 \alpha_{{\text{{{metric_name}}}}} &= {formula} \\
- &= 1 - ({n}-1) \cdot\frac{{ {D_o_tex} }}{{ {D_e_tex} }} = \frac{{{fraction_result.numerator}}}{{{fraction_result.denominator}}} \approx  {decimal_result}
+ &= 1 - ({n}-1) \cdot\frac{{ {D_o_tex} }}{{ {D_e_tex} }} = \frac{{{frac_num}}}{{{frac_den}}} \approx  {decimal_result}
 \end{{align*}}"""
             self.__alpha_values[(metric_name, fraction_style)] = fraction_result, decimal_result, result_for_tex
         return self.__alpha_values[(metric_name, fraction_style)]

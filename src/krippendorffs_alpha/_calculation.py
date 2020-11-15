@@ -130,6 +130,7 @@ def _calc_alpha_by_precomputes(assignment_matrix: numpy.ndarray,
 
     # noinspection SpellCheckingInspection
     prepared_observed_disagreement = numpy.einsum("u,ijuu->", norming_values, full_cross_disagreement_tensor)
+    # noinspection SpellCheckingInspection
     prepared_expected_disagreement = numpy.einsum("m,s,ijms->",
                                                   pairable_units_id, pairable_units_id, full_cross_disagreement_tensor)
 

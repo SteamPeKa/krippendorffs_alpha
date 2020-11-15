@@ -60,6 +60,7 @@ def _ram_hungry_observerwise_jackknife(prepared_data: _PreparedData, metric: Uni
     norming_values = numpy.zeros(overlaps.shape)
     norming_values[overlaps > 1] = 1.0 / (overlaps[overlaps > 1] - 1)
 
+    # noinspection SpellCheckingInspection
     cross_unit_disagreements = numpy.einsum("bi,bj,ijms->bms",
                                             observers_masks,
                                             observers_masks,

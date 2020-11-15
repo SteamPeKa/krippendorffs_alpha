@@ -96,6 +96,7 @@ def prepare_html_node(input_node: HTMLNode):
     return node_to_representation[input_node]
 
 
+# noinspection PyUnusedLocal
 def list_of_lists_to_html_table(list_of_lists: List[List[str]], header=True, footer=True, left_legend=True,
                                 right_legend=True, **kwargs):
     data_copy = []
