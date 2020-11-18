@@ -1,14 +1,14 @@
 # coding=utf-8
-# Creation date: 04 нояб. 2020
-# Creation time: 20:07
+# Creation date: 17 нояб. 2020
+# Creation time: 13:36
 # Creator: SteamPeKa
 
 from typing import Union
 
 import numpy
 
-from ._calculation import _PreparedData, _calc_alpha, _prepare_bootstrap_precomputes
-from .metrics import AbstractMetric
+from .._calculation import _PreparedData, _calc_alpha, _prepare_bootstrap_precomputes
+from ..metrics import AbstractMetric
 
 
 def _precompute_tensors_for_unitwise_resampling(prepared_data: _PreparedData,
